@@ -410,7 +410,7 @@
 </div>
 
 <script>
-  var slots = [
+  var DEFAULT_SLOTS = [
     {time:'6:00 AM', title:'Morning workout', loc:'Home / Terrace', color:'teal'},
     {time:'8:00 AM', title:'Breakfast & news', loc:'Home', color:'amber'},
     {time:'9:30 AM', title:'Study / work session', loc:'Room / Desk', color:'blue'},
@@ -419,21 +419,30 @@
     {time:'6:00 PM', title:'Evening walk', loc:'Park / Society', color:'teal'},
     {time:'9:00 PM', title:'Plan tomorrow', loc:'Room', color:'blue'},
   ];
-
-  var tasks = [
+  var DEFAULT_TASKS = [
     {name:'Complete assignment', tags:['study','urgent'], done:false, time:'9:30 AM'},
     {name:'Reply to important messages', tags:['work'], done:false, time:'11:00 AM'},
     {name:'Grocery shopping', tags:['personal'], done:true, time:''},
     {name:'Read 20 pages', tags:['personal'], done:false, time:'Evening'},
   ];
-
-  var pending = [
+  var DEFAULT_PENDING = [
     {text:'Submit project report', pri:'high', due:'Today'},
     {text:'Pay electricity bill', pri:'high', due:'Tomorrow'},
     {text:'Call doctor for appointment', pri:'mid', due:'This week'},
     {text:'Fix laptop charger issue', pri:'mid', due:'This week'},
     {text:'Clean up phone storage', pri:'low', due:'Someday'},
   ];
+
+  function load(key, def) {
+    try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; }
+  }
+  function save(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+  }
+
+  var slots   = load('planner_slots',   DEFAULT_SLOTS);
+  var tasks   = load('planner_tasks',   DEFAULT_TASKS);
+  var pending = load('planner_pending', DEFAULT_PENDING);
 
   var tagColors = {study:'tag-blue', urgent:'tag-red', work:'tag-amber', personal:'tag-green'};
   var dotColors = {blue:'dot-blue', teal:'dot-teal', amber:'dot-amber', purple:'dot-purple'};
@@ -461,7 +470,11 @@
   }
 
   function deleteSlot(i) {
-    if (confirm('Delete this slot?')) { slots.splice(i, 1); renderTimetable(); }
+    if (confirm('Delete this slot?')) {
+      slots.splice(i, 1);
+      save('planner_slots', slots);
+      renderTimetable();
+    }
   }
 
   function openModal() { document.getElementById('modal').classList.add('open'); }
@@ -474,6 +487,7 @@
     var c = document.getElementById('m-color').value;
     if (!t || !a) { alert('Please enter time and activity.'); return; }
     slots.push({time:t, title:a, loc:l||'—', color:c});
+    save('planner_slots', slots);
     closeModal();
     document.getElementById('m-time').value = '';
     document.getElementById('m-title').value = '';
@@ -503,14 +517,23 @@
     updateStats();
   }
 
-  function toggleTask(i) { tasks[i].done = !tasks[i].done; renderTasks(); }
+  function toggleTask(i) {
+    tasks[i].done = !tasks[i].done;
+    save('planner_tasks', tasks);
+    renderTasks();
+  }
 
-  function deleteTask(i) { tasks.splice(i, 1); renderTasks(); }
+  function deleteTask(i) {
+    tasks.splice(i, 1);
+    save('planner_tasks', tasks);
+    renderTasks();
+  }
 
   function addTask() {
     var v = document.getElementById('new-task').value.trim();
     if (!v) return;
     tasks.push({name:v, tags:['personal'], done:false, time:''});
+    save('planner_tasks', tasks);
     document.getElementById('new-task').value = '';
     renderTasks();
   }
@@ -539,6 +562,7 @@
 
   function removePending(text) {
     pending = pending.filter(function(x) { return x.text !== text; });
+    save('planner_pending', pending);
     renderPending();
   }
 
@@ -548,6 +572,7 @@
     var d = document.getElementById('pend-due').value.trim() || 'Soon';
     if (!v) return;
     pending.push({text:v, pri:p, due:d});
+    save('planner_pending', pending);
     document.getElementById('new-pend').value = '';
     document.getElementById('pend-due').value = '';
     renderPending();
