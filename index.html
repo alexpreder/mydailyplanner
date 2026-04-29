@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Daily Planner</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f9f8f5;
+      --card: #ffffff;
+      --border: #e4e2da;
+      --text: #1a1a1a;
+      --text2: #6b6b6b;
+      --text3: #aaa;
+      --accent: #4f46e5;
+      --accent-light: #eeedfe;
+      --accent-text: #3c3489;
+      --teal: #e1f5ee;
+      --teal-text: #085041;
+      --teal-border: #9fe1cb;
+      --amber: #faeeda;
+      --amber-text: #633806;
+      --amber-border: #fac775;
+      --blue: #e6f1fb;
+      --blue-text: #0c447c;
+      --blue-border: #b5d4f4;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141414;
+        --card: #1e1e1e;
+        --border: #2e2e2e;
+        --text: #f0f0f0;
+        --text2: #999;
+        --text3: #555;
+        --accent: #7f77dd;
+        --accent-light: #26215c;
+        --accent-text: #cac6f8;
+        --teal: #04342c;
+        --teal-text: #9fe1cb;
+        --teal-border: #0f6e56;
+        --amber: #412402;
+        --amber-text: #fac775;
+        --amber-border: #854f0b;
+        --blue: #042c53;
+        --blue-text: #b5d4f4;
+        --blue-border: #185fa5;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 24px 16px 80px;
+    }
+
+    /* Header */
+    .header { margin-bottom: 20px; }
+    .greeting { font-size: 13px; color: var(--text2); margin-bottom: 2px; }
+    .day-name { font-size: 28px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+    .day-date { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 16px 0; }
+    .stat-card {
+      background: var(--card);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      text-align: center;
+    }
+    .stat-n { font-size: 22px; font-weight: 700; color: var(--text); }
+    .stat-l { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: var(--card);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+    .tab {
+      flex: 1;
+      padding: 8px 6px;
+      font-size: 13px;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--text2);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .tab.active {
+      background: var(--accent-light);
+      color: var(--accent-text);
+    }
+
+    /* Panels */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* Timetable */
+    .slot-row { display: flex; gap: 12px; margin-bottom: 8px; align-items: flex-start; }
+    .slot-time {
+      font-size: 11px; color: var(--text3); width: 52px;
+      flex-shrink: 0; text-align: right; padding-top: 9px;
+    }
+    .slot-line {
+      width: 1px; background: var(--border);
+      flex-shrink: 0; align-self: stretch; position: relative;
+    }
+    .slot-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      position: absolute; left: -4px; top: 7px;
+    }
+    .slot-card {
+      flex: 1; border-radius: var(--radius-sm);
+      padding: 9px 12px; border: 0.5px solid transparent; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .slot-card:hover { opacity: 0.8; }
+    .sc-title { font-size: 13px; font-weight: 600; }
+    .sc-loc { font-size: 11px; margin-top: 3px; }
+    .c-blue { background: var(--blue); border-color: var(--blue-border) !important; }
+    .c-blue .sc-title { color: var(--blue-text); }
+    .c-blue .sc-loc { color: var(--blue-text); opacity: 0.75; }
+    .c-teal { background: var(--teal); border-color: var(--teal-border) !important; }
+    .c-teal .sc-title { color: var(--teal-text); }
+    .c-teal .sc-loc { color: var(--teal-text); opacity: 0.75; }
+    .c-amber { background: var(--amber); border-color: var(--amber-border) !important; }
+    .c-amber .sc-title { color: var(--amber-text); }
+    .c-amber .sc-loc { color: var(--amber-text); opacity: 0.75; }
+    .c-purple { background: var(--accent-light); border-color: #cecbf6 !important; }
+    .c-purple .sc-title { color: var(--accent-text); }
+    .c-purple .sc-loc { color: var(--accent-text); opacity: 0.75; }
+    .dot-blue { background: #378add; }
+    .dot-teal { background: #1d9e75; }
+    .dot-amber { background: #ba7517; }
+    .dot-purple { background: #7f77dd; }
+
+    /* Add slot button */
+    .add-slot-btn {
+      width: 100%; padding: 10px; margin-top: 8px;
+      font-size: 12px; color: var(--text2);
+      border: 1px dashed var(--border); border-radius: var(--radius);
+      background: transparent; cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .add-slot-btn:hover { background: var(--card); }
+
+    /* Tasks */
+    .task-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 14px;
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      margin-bottom: 8px;
+    }
+    .chk {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 1.5px solid var(--border); cursor: pointer;
+      flex-shrink: 0; margin-top: 1px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .chk.done { background: #1d9e75; border-color: #1d9e75; }
+    .chk.done::after {
+      content: ''; display: block;
+      width: 5px; height: 9px;
+      border: 1.5px solid white;
+      border-top: none; border-left: none;
+      transform: rotate(45deg) translate(-1px, -1px);
+    }
+    .task-body { flex: 1; }
+    .task-name { font-size: 14px; font-weight: 500; color: var(--text); }
+    .task-name.done { text-decoration: line-through; color: var(--text3); }
+    .task-meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; align-items: center; }
+    .tag {
+      font-size: 11px; padding: 2px 8px; border-radius: 20px;
+      font-weight: 500;
+    }
+    .tag-blue { background: var(--blue); color: var(--blue-text); }
+    .tag-amber { background: var(--amber); color: var(--amber-text); }
+    .tag-red { background: #fcebeb; color: #a32d2d; }
+    .tag-green { background: #eaf3de; color: #3b6d11; }
+    .tag-gray { background: #f1efe8; color: #5f5e5a; }
+    .task-time { font-size: 11px; color: var(--text3); }
+    .del-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--text3); font-size: 16px; padding: 0 4px;
+      line-height: 1;
+    }
+    .del-btn:hover { color: #e24b4a; }
+
+    /* Add task */
+    .add-row { display: flex; gap: 8px; margin-top: 12px; }
+    .add-row input {
+      flex: 1; padding: 9px 12px; font-size: 13px;
+      border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--card); color: var(--text); font-family: inherit;
+      outline: none;
+    }
+    .add-row input:focus { border-color: var(--accent); }
+    .add-row button, .add-slot-btn-sm {
+      padding: 9px 16px; font-size: 13px; font-weight: 500;
+      background: var(--accent); color: white;
+      border: none; border-radius: var(--radius-sm); cursor: pointer;
+      font-family: inherit; transition: opacity 0.15s;
+    }
+    .add-row button:hover { opacity: 0.85; }
+
+    /* Pending */
+    .section-lbl {
+      font-size: 11px; font-weight: 600; color: var(--text3);
+      text-transform: uppercase; letter-spacing: 0.07em;
+      margin: 14px 0 6px;
+    }
+    .pend-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      border: 0.5px solid var(--border); border-radius: var(--radius);
+      background: var(--card); margin-bottom: 6px;
+    }
+    .pdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .ph { background: #e24b4a; }
+    .pm { background: #ef9f27; }
+    .pl { background: #639922; }
+    .pend-text { flex: 1; font-size: 13px; color: var(--text); }
+    .pend-due { font-size: 11px; color: var(--text3); margin-right: 6px; flex-shrink: 0; }
+    .done-btn {
+      font-size: 11px; padding: 3px 8px; cursor: pointer;
+      border: 0.5px solid var(--border); border-radius: 4px;
+      background: transparent; color: var(--text2); font-family: inherit;
+      flex-shrink: 0;
+    }
+    .done-btn:hover { background: #eaf3de; color: #3b6d11; border-color: #9fe1cb; }
+    .empty-msg { font-size: 12px; color: var(--text3); padding: 6px 2px; }
+
+    /* Add pending */
+    .add-pend-row { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+    .add-pend-row input {
+      flex: 1; min-width: 130px; padding: 9px 12px; font-size: 13px;
+      border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--card); color: var(--text); font-family: inherit; outline: none;
+    }
+    .add-pend-row input:focus { border-color: var(--accent); }
+    .add-pend-row select {
+      padding: 9px 8px; font-size: 12px;
+      border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--card); color: var(--text); font-family: inherit; outline: none;
+    }
+    .add-pend-row button {
+      padding: 9px 14px; font-size: 13px; font-weight: 500;
+      background: var(--accent); color: white;
+      border: none; border-radius: var(--radius-sm); cursor: pointer;
+      font-family: inherit;
+    }
+
+    /* Modal */
+    .modal-bg {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 100;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: var(--card); border-radius: var(--radius);
+      border: 0.5px solid var(--border);
+      padding: 20px; width: 100%; max-width: 340px;
+    }
+    .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+    .modal label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 4px; margin-top: 10px; }
+    .modal input, .modal select {
+      width: 100%; padding: 8px 10px; font-size: 13px;
+      border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--bg); color: var(--text); font-family: inherit; outline: none;
+    }
+    .modal input:focus { border-color: var(--accent); }
+    .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
+    .modal-btns button {
+      flex: 1; padding: 9px; font-size: 13px; font-weight: 500;
+      border-radius: var(--radius-sm); cursor: pointer; font-family: inherit;
+      border: 0.5px solid var(--border);
+    }
+    .btn-cancel { background: transparent; color: var(--text2); }
+    .btn-save { background: var(--accent); color: white; border-color: var(--accent); }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card); border-top: 0.5px solid var(--border);
+      display: flex; padding: 8px 0 12px; z-index: 50;
+    }
+    .bnav-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 3px; background: none; border: none; cursor: pointer;
+      font-family: inherit; padding: 4px 0;
+    }
+    .bnav-icon { font-size: 20px; }
+    .bnav-lbl { font-size: 10px; color: var(--text2); font-weight: 500; }
+    .bnav-btn.active .bnav-lbl { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="greeting">Good day,</div>
+    <div class="day-name" id="dayname">Thursday</div>
+    <div class="day-date" id="daydate">April 30, 2026</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-n" id="stat-done">0</div>
+      <div class="stat-lbl">done</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-n" id="stat-total">0</div>
+      <div class="stat-lbl">tasks</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-n" id="stat-pend">0</div>
+      <div class="stat-lbl">pending</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="show('timetable',this)">Timetable</button>
+    <button class="tab" onclick="show('tasks',this)">Tasks</button>
+    <button class="tab" onclick="show('pending',this)">Pending</button>
+  </div>
+
+  <!-- Timetable -->
+  <div class="panel active" id="panel-timetable">
+    <div id="timetable-list"></div>
+    <button class="add-slot-btn" onclick="openModal()">+ Add time slot</button>
+  </div>
+
+  <!-- Tasks -->
+  <div class="panel" id="panel-tasks">
+    <div id="task-list"></div>
+    <div class="add-row">
+      <input type="text" id="new-task" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()" />
+      <button onclick="addTask()">Add</button>
+    </div>
+  </div>
+
+  <!-- Pending -->
+  <div class="panel" id="panel-pending">
+    <div class="section-lbl">🔴 High priority</div>
+    <div id="pend-high"></div>
+    <div class="section-lbl">🟡 Medium priority</div>
+    <div id="pend-mid"></div>
+    <div class="section-lbl">🟢 Low priority</div>
+    <div id="pend-low"></div>
+    <div class="add-pend-row">
+      <input type="text" id="new-pend" placeholder="Add pending work..." onkeydown="if(event.key==='Enter')addPending()" />
+      <select id="pend-pri">
+        <option value="high">High</option>
+        <option value="mid" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <input type="text" id="pend-due" placeholder="Due (e.g. Today)" style="max-width:100px;" />
+      <button onclick="addPending()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Slot Modal -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3>Add time slot</h3>
+    <label>Time</label>
+    <input type="text" id="m-time" placeholder="e.g. 7:00 AM" />
+    <label>What to do</label>
+    <input type="text" id="m-title" placeholder="e.g. Morning workout" />
+    <label>Where (location)</label>
+    <input type="text" id="m-loc" placeholder="e.g. Home / Park" />
+    <label>Color</label>
+    <select id="m-color">
+      <option value="blue">Blue</option>
+      <option value="teal">Teal</option>
+      <option value="amber">Amber</option>
+      <option value="purple">Purple</option>
+    </select>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveSlot()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var slots = [
+    {time:'6:00 AM', title:'Morning workout', loc:'Home / Terrace', color:'teal'},
+    {time:'8:00 AM', title:'Breakfast & news', loc:'Home', color:'amber'},
+    {time:'9:30 AM', title:'Study / work session', loc:'Room / Desk', color:'blue'},
+    {time:'1:00 PM', title:'Lunch break', loc:'Home / Canteen', color:'amber'},
+    {time:'2:30 PM', title:'Focus work block', loc:'Room / Library', color:'purple'},
+    {time:'6:00 PM', title:'Evening walk', loc:'Park / Society', color:'teal'},
+    {time:'9:00 PM', title:'Plan tomorrow', loc:'Room', color:'blue'},
+  ];
+
+  var tasks = [
+    {name:'Complete assignment', tags:['study','urgent'], done:false, time:'9:30 AM'},
+    {name:'Reply to important messages', tags:['work'], done:false, time:'11:00 AM'},
+    {name:'Grocery shopping', tags:['personal'], done:true, time:''},
+    {name:'Read 20 pages', tags:['personal'], done:false, time:'Evening'},
+  ];
+
+  var pending = [
+    {text:'Submit project report', pri:'high', due:'Today'},
+    {text:'Pay electricity bill', pri:'high', due:'Tomorrow'},
+    {text:'Call doctor for appointment', pri:'mid', due:'This week'},
+    {text:'Fix laptop charger issue', pri:'mid', due:'This week'},
+    {text:'Clean up phone storage', pri:'low', due:'Someday'},
+  ];
+
+  var tagColors = {study:'tag-blue', urgent:'tag-red', work:'tag-amber', personal:'tag-green'};
+  var dotColors = {blue:'dot-blue', teal:'dot-teal', amber:'dot-amber', purple:'dot-purple'};
+
+  function show(panel, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + panel).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function renderTimetable() {
+    var el = document.getElementById('timetable-list');
+    el.innerHTML = slots.map(function(s, i) {
+      return '<div class="slot-row">' +
+        '<div class="slot-time">' + s.time + '</div>' +
+        '<div class="slot-line"><div class="slot-dot ' + dotColors[s.color] + '"></div></div>' +
+        '<div class="slot-card c-' + s.color + '">' +
+          '<div class="sc-title">' + s.title + '</div>' +
+          '<div class="sc-loc">📍 ' + s.loc + '</div>' +
+        '</div>' +
+        '<button class="del-btn" onclick="deleteSlot(' + i + ')" title="Delete">×</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function deleteSlot(i) {
+    if (confirm('Delete this slot?')) { slots.splice(i, 1); renderTimetable(); }
+  }
+
+  function openModal() { document.getElementById('modal').classList.add('open'); }
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+  function saveSlot() {
+    var t = document.getElementById('m-time').value.trim();
+    var a = document.getElementById('m-title').value.trim();
+    var l = document.getElementById('m-loc').value.trim();
+    var c = document.getElementById('m-color').value;
+    if (!t || !a) { alert('Please enter time and activity.'); return; }
+    slots.push({time:t, title:a, loc:l||'—', color:c});
+    closeModal();
+    document.getElementById('m-time').value = '';
+    document.getElementById('m-title').value = '';
+    document.getElementById('m-loc').value = '';
+    renderTimetable();
+  }
+
+  function renderTasks() {
+    var el = document.getElementById('task-list');
+    if (tasks.length === 0) {
+      el.innerHTML = '<div class="empty-msg">No tasks yet. Add one below!</div>';
+    } else {
+      el.innerHTML = tasks.map(function(t, i) {
+        var tags = t.tags.map(function(tg) {
+          return '<span class="tag ' + (tagColors[tg] || 'tag-gray') + '">' + tg + '</span>';
+        }).join('');
+        return '<div class="task-item">' +
+          '<div class="chk ' + (t.done ? 'done' : '') + '" onclick="toggleTask(' + i + ')"></div>' +
+          '<div class="task-body">' +
+            '<div class="task-name ' + (t.done ? 'done' : '') + '">' + t.name + '</div>' +
+            '<div class="task-meta">' + tags + (t.time ? '<span class="task-time">⏰ ' + t.time + '</span>' : '') + '</div>' +
+          '</div>' +
+          '<button class="del-btn" onclick="deleteTask(' + i + ')" title="Delete">×</button>' +
+        '</div>';
+      }).join('');
+    }
+    updateStats();
+  }
+
+  function toggleTask(i) { tasks[i].done = !tasks[i].done; renderTasks(); }
+
+  function deleteTask(i) { tasks.splice(i, 1); renderTasks(); }
+
+  function addTask() {
+    var v = document.getElementById('new-task').value.trim();
+    if (!v) return;
+    tasks.push({name:v, tags:['personal'], done:false, time:''});
+    document.getElementById('new-task').value = '';
+    renderTasks();
+  }
+
+  function renderPending() {
+    ['high', 'mid', 'low'].forEach(function(p) {
+      var el = document.getElementById('pend-' + p);
+      var items = pending.filter(function(x) { return x.pri === p; });
+      if (items.length === 0) {
+        el.innerHTML = '<div class="empty-msg">Nothing here</div>';
+      } else {
+        el.innerHTML = items.map(function(x) {
+          var dotcls = p === 'high' ? 'ph' : p === 'mid' ? 'pm' : 'pl';
+          var safeText = x.text.replace(/'/g, "\\'");
+          return '<div class="pend-item">' +
+            '<div class="pdot ' + dotcls + '"></div>' +
+            '<div class="pend-text">' + x.text + '</div>' +
+            '<div class="pend-due">' + x.due + '</div>' +
+            '<button class="done-btn" onclick="removePending(\'' + safeText + '\')">Done ✓</button>' +
+          '</div>';
+        }).join('');
+      }
+    });
+    updateStats();
+  }
+
+  function removePending(text) {
+    pending = pending.filter(function(x) { return x.text !== text; });
+    renderPending();
+  }
+
+  function addPending() {
+    var v = document.getElementById('new-pend').value.trim();
+    var p = document.getElementById('pend-pri').value;
+    var d = document.getElementById('pend-due').value.trim() || 'Soon';
+    if (!v) return;
+    pending.push({text:v, pri:p, due:d});
+    document.getElementById('new-pend').value = '';
+    document.getElementById('pend-due').value = '';
+    renderPending();
+  }
+
+  function updateStats() {
+    document.getElementById('stat-done').textContent = tasks.filter(function(t) { return t.done; }).length;
+    document.getElementById('stat-total').textContent = tasks.length;
+    document.getElementById('stat-pend').textContent = pending.length;
+  }
+
+  // Set date
+  var d = new Date();
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('dayname').textContent = days[d.getDay()];
+  document.getElementById('daydate').textContent = months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+
+  // Set greeting
+  var hr = d.getHours();
+  var greet = hr < 12 ? 'Good morning,' : hr < 17 ? 'Good afternoon,' : 'Good evening,';
+  document.querySelector('.greeting').textContent = greet;
+
+  // Close modal on bg click
+  document.getElementById('modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  renderTimetable();
+  renderTasks();
+  renderPending();
+</script>
+</body>
+</html>
